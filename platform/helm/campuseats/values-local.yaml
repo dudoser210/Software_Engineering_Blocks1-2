@@ -1,0 +1,6 @@
+global:
+  image:
+    tag: dev
+dataStores:
+  storage: 1Gi
+

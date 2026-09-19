@@ -1,0 +1,60 @@
+name: Build and GitOps deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - platform/helm/unieats/values-local.yaml
+      - "docs/**"
+
+permissions:
+  contents: write
+
+jobs:
+  kaniko-build:
+    runs-on: [self-hosted, windows, unieats]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure local registry
+        shell: pwsh
+        run: |
+          $exists = docker ps -a --format '{{.Names}}' | Select-String '^uni-registry$'
+          if (-not $exists) {
+            docker run -d --restart unless-stopped -p 5000:5000 --name uni-registry registry:2
+          } else {
+            docker start uni-registry 2>$null
+          }
+
+      - name: Build and push with Kaniko
+        shell: pwsh
+        run: |
+          $tag = "${{ github.sha }}".Substring(0, 12)
+          docker run --rm `
+            --add-host host.docker.internal:host-gateway `
+            -v "${{ github.workspace }}:/workspace" `
+            gcr.io/kaniko-project/executor:v1.23.2 `
+            --context=/workspace `
+            --dockerfile=/workspace/services/Dockerfile `
+            --destination="host.docker.internal:5000/unieats-services:$tag" `
+            --insecure --skip-tls-verify
+
+      - name: Update Helm image tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.sha }}".Substring(0, 12)
+          $path = "platform/helm/unieats/values-local.yaml"
+          $content = Get-Content -Raw $path
+          $content = $content -replace 'tag: .*', "tag: $tag"
+          [IO.File]::WriteAllText((Resolve-Path $path), $content)
+          git config user.name "unieats-ci"
+          git config user.email "unieats-ci@users.noreply.github.com"
+          git add $path
+          git commit -m "chore(deploy): use image $tag [skip ci]"
+          git push
+
+      - name: Wait for Argo CD sync
+        shell: pwsh
+        run: |
+          kubectl -n argocd wait application/unieats --for=jsonpath='{.status.health.status}'=Healthy --timeout=10m
+

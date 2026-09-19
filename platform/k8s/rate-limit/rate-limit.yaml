@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: rate-limit-config, namespace: rate-limit}
+data:
+  config.yaml: |
+    domain: unieats
+    descriptors:
+      - key: remote_address
+        rate_limit:
+          unit: second
+          requests_per_unit: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: rate-limit, namespace: rate-limit}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: rate-limit}}
+  template:
+    metadata: {labels: {app: rate-limit}}
+    spec:
+      containers:
+        - name: rate-limit
+          image: envoyproxy/ratelimit:v1.6.0
+          ports:
+            - {name: grpc, containerPort: 8081}
+            - {name: metrics, containerPort: 6070}
+          env:
+            - {name: LOG_LEVEL, value: info}
+            - {name: USE_STATSD, value: "false"}
+            - {name: REDIS_SOCKET_TYPE, value: tcp}
+            - {name: REDIS_URL, value: valkey.unieats.svc.cluster.local:6379}
+            - {name: RUNTIME_ROOT, value: /data}
+            - {name: RUNTIME_SUBDIRECTORY, value: ratelimit}
+          volumeMounts:
+            - {name: config, mountPath: /data/ratelimit/config/config.yaml, subPath: config.yaml}
+      volumes:
+        - name: config
+          configMap: {name: rate-limit-config}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: rate-limit, namespace: rate-limit}
+spec:
+  selector: {app: rate-limit}
+  ports:
+    - {name: grpc, port: 8081, targetPort: grpc}
+    - {name: metrics, port: 6070, targetPort: metrics}
+

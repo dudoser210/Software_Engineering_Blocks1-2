@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: unieats
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/OutSora/unieats.git
+    targetRevision: main
+    path: platform/helm/unieats
+    helm:
+      valueFiles: [values.yaml, values-local.yaml]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: unieats
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+

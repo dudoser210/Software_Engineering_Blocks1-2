@@ -1,0 +1,98 @@
+{{- if .Values.dataStores.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: postgres}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata: {labels: {app: postgres}}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17-alpine
+          env:
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: unieats-database, key: POSTGRES_USER}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: unieats-database, key: POSTGRES_PASSWORD}}
+            - name: POSTGRES_DB
+              valueFrom: {secretKeyRef: {name: unieats-database, key: POSTGRES_DB}}
+          ports: [{name: postgres, containerPort: 5432}]
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: {{ .Values.dataStores.storage }}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres}
+spec:
+  selector: {app: postgres}
+  ports: [{name: postgres, port: 5432}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: mongo}
+spec:
+  serviceName: mongo
+  replicas: 1
+  selector: {matchLabels: {app: mongo}}
+  template:
+    metadata: {labels: {app: mongo}}
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:8.0
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom: {secretKeyRef: {name: unieats-database, key: MONGO_USER}}
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom: {secretKeyRef: {name: unieats-database, key: MONGO_PASSWORD}}
+          ports: [{name: mongo, containerPort: 27017}]
+          volumeMounts: [{name: data, mountPath: /data/db}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: {{ .Values.dataStores.storage }}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mongo}
+spec:
+  selector: {app: mongo}
+  ports: [{name: mongo, port: 27017}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: valkey}
+spec:
+  serviceName: valkey
+  replicas: 1
+  selector: {matchLabels: {app: valkey}}
+  template:
+    metadata: {labels: {app: valkey}}
+    spec:
+      containers:
+        - name: valkey
+          image: valkey/valkey:8-alpine
+          args: ["valkey-server", "--appendonly", "yes"]
+          ports: [{name: redis, containerPort: 6379}]
+          volumeMounts: [{name: data, mountPath: /data}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: {{ .Values.dataStores.storage }}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: valkey}
+spec:
+  selector: {app: valkey}
+  ports: [{name: redis, port: 6379}]
+{{- end }}
