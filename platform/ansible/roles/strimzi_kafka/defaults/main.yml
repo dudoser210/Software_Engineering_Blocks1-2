@@ -1,8 +1,0 @@
----
-strimzi_namespace: kafka
-strimzi_chart_version: "0.47.0"
-kafka_cluster_name: unieats
-kafka_replicas: 3
-kafka_storage_size: 5Gi
-kafka_version: "4.0.0"
-

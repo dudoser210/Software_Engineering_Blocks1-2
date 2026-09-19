@@ -1,7 +1,0 @@
----
-- name: Install Kafka platform into the current Kubernetes context
-  hosts: local
-  gather_facts: false
-  roles:
-    - strimzi_kafka
-

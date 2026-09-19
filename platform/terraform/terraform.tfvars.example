@@ -1,5 +1,0 @@
-kubeconfig_path  = "~/.kube/config"
-kube_context     = "unieats"
-postgres_password = "replace-me-before-apply"
-mongo_password    = "replace-me-before-apply"
-
