@@ -93,7 +93,7 @@ docker compose down -v
 ## 7. Структура
 
 ```text
-campuseats/
+unieats/
 ├── gateway/                 # Nginx: routing, balancing, rate limit
 ├── services/
 │   ├── common/              # общий инфраструктурный код Kafka/PostgreSQL
