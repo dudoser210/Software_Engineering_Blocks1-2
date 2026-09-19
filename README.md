@@ -21,10 +21,10 @@ docker compose version
 
 ## 2. Как открыть проект
 
-Распакуйте архив в папку без русских букв, например `C:\projects\campuseats`. Затем в PowerShell выполните:
+Распакуйте архив в папку без русских букв, например `C:\projects\unieats`. Затем в PowerShell выполните:
 
 ```powershell
-cd C:\projects\campuseats
+cd C:\projects\unieats
 Copy-Item .env.example .env
 docker compose up --build -d
 ```
