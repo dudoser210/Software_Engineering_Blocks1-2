@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: strimzi-kafka
+  namespace: observability
+spec:
+  namespaceSelector: {matchNames: [kafka]}
+  selector:
+    matchExpressions:
+      - {key: strimzi.io/kind, operator: In, values: [Kafka, KafkaMirrorMaker2]}
+  podMetricsEndpoints:
+    - {path: /metrics, port: tcp-prometheus, interval: 30s}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: strimzi-kafka-exporter
+  namespace: observability
+spec:
+  namespaceSelector: {matchNames: [kafka]}
+  selector:
+    matchLabels: {strimzi.io/name: unieats-kafka-exporter}
+  podMetricsEndpoints:
+    - {path: /metrics, port: tcp-prometheus, interval: 30s}
+

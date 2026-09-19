@@ -1,0 +1,7 @@
+apiVersion: v2
+name: unieats
+description: Six UniEats microservices and their development data stores
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+

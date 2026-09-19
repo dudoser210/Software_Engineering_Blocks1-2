@@ -1,0 +1,16 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: unieats-service-policy, namespace: unieats}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: unieats
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: unieats
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: istio-ingress
+  egress:
+    # Kafka lives in another namespace; data stores and DNS are cluster-local.
+    - toEntities: [cluster]
